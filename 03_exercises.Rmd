@@ -81,8 +81,10 @@ These exercises will reiterate what you learned in the "Expanding the data wrang
 garden_harvest %>% 
   mutate(day_of_week = wday(date, label = TRUE)) %>% 
   group_by(vegetable, day_of_week) %>% 
-  summarize() %>% 
-  pivot_wider()
+  summarize(pounds = sum((weight * 0.00220462))) %>% 
+  arrange(day_of_week) %>% 
+  arrange(vegetable) %>% 
+  pivot_wider(names_from = day_of_week, values_from = pounds)
 
 
 ```
@@ -90,6 +92,9 @@ garden_harvest %>%
   2. Summarize the `garden_harvest` data to find the total harvest in pound for each vegetable variety and then try adding the plot from the `garden_planting` table. This will not turn out perfectly. What is the problem? How might you fix it?
 
 ```{r}
+
+
+
 
 ```
 
