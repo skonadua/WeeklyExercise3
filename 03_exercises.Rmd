@@ -8,6 +8,7 @@ output:
     toc_float: TRUE
     df_print: paged
     code_download: true
+    theme: cosmo 
 ---
 
 
