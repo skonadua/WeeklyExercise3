@@ -93,17 +93,52 @@ garden_harvest %>%
 
 ```{r}
 
+garden_harvest %>% 
+  inner_join(garden_planting, by = "vegetable" , "variety") %>% 
+  mutate(pounds = ((weight * 0.00220462)))
+  
+  # I had initially used the "left_join" instead of "semi-join." I like the latter better because it allows the two categories that the two tables have in common to be collapsed into one. However, some of the other variables-- such as plot, number of seeds planted, and number of seeds (exact)-- do not appear in this table as a result.  --> switch to inner join?
+# not all of the variables for either plot line up/match ; some are multiple (i.e variety and vegetable have two sections for each separate original table)
 
+# not sure how to get rid of the other variables?
+
+
+  # group_by(variety, vegetable) %>% 
+  # summarize(pounds = sum((weight * 0.00220462)))
+
+# garden_harvest %>% 
+#   mutate(day_of_week = wday(date, label = TRUE)) %>% 
+#   group_by(vegetable, day_of_week) %>% 
+#   summarize(pounds = sum((weight * 0.00220462))) %>% 
+#   arrange(day_of_week) %>% 
+#   arrange(vegetable) %>% 
+#   pivot_wider(names_from = day_of_week, values_from = pounds)
 
 
 ```
 
   3. I would like to understand how much money I "saved" by gardening, for each vegetable type. Describe how I could use the `garden_harvest` and `garden_spending` datasets, along with data from somewhere like [this](https://products.wholefoodsmarket.com/search?sort=relevance&store=10542) to answer this question. You can answer this in words, referencing various join functions. You don't need R code but could provide some if it's helpful.
 
+*For this, *
+
   4. Subset the data to tomatoes. Reorder the tomato varieties from smallest to largest first harvest date. Create a barplot of total harvest in pounds for each variety, in the new order.
 
 ```{r}
 
+garden_harvest %>%
+  filter(vegetable == "tomatoes") %>%
+  mutate(pounds = ((weight * 0.00220462))) %>% 
+  arrange(date) %>% 
+  ggplot(aes(x = "pounds", y = "variety")) +
+  geom_col()
+
+# babynames %>%
+#   filter(sex == "M") %>% 
+#   group_by(name) %>% 
+#   summarize(nsum = sum(n)) %>% 
+#   arrange(desc(nsum))
+  
+  
 ```
 
   5. In the `garden_harvest` data, create two new variables: one that makes the varieties lowercase and another that finds the length of the variety name. Arrange the data by vegetable and length of variety name (smallest to largest), with one row for each vegetable variety. HINT: use `str_to_lower()`, `str_length()`, and `distinct()`.
