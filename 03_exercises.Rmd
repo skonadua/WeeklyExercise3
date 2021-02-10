@@ -86,6 +86,7 @@ garden_harvest %>%
   arrange(vegetable) %>% 
   pivot_wider(names_from = day_of_week, values_from = pounds)
 
+# couldn't figure out how to get the days of the week to be in order. 
 
 ```
 
@@ -94,8 +95,11 @@ garden_harvest %>%
 ```{r}
 
 garden_harvest %>% 
-  inner_join(garden_planting, by = "vegetable" , "variety") %>% 
-  mutate(pounds = ((weight * 0.00220462)))
+  group_by(variety) %>%
+  summarize(pounds = sum(weight * 0.00220462)) %>% 
+  inner_join(garden_planting) 
+
+#some of the variety ones are repeated because there wasn't a distinction made between the variety in the first plot (garden_harvest) and the second table that it was joined with. 
   
   # I had initially used the "left_join" instead of "semi-join." I like the latter better because it allows the two categories that the two tables have in common to be collapsed into one. However, some of the other variables-- such as plot, number of seeds planted, and number of seeds (exact)-- do not appear in this table as a result.  --> switch to inner join?
 # not all of the variables for either plot line up/match ; some are multiple (i.e variety and vegetable have two sections for each separate original table)
@@ -125,19 +129,17 @@ garden_harvest %>%
 
 ```{r}
 
-garden_harvest %>%
-  filter(vegetable == "tomatoes") %>%
-  mutate(pounds = ((weight * 0.00220462))) %>% 
-  arrange(date) %>% 
-  ggplot(aes(x = "pounds", y = "variety")) +
-  geom_col()
+garden_harvest %>% 
+  filter(vegetable == "tomatoes") %>% 
+  group_by(variety) %>% 
+  summarize(pounds = sum(weight * 0.00220462), 
+            harvest1 = min(date)) %>%
+  ggplot(aes(x = pounds, y = fct_reorder(variety, pounds))) +
+  geom_bar(stat = "identity", fill = "brown4") +
+  labs(title = "Total Weight in Pounds of Tomatoes by Variety", 
+       x = "Cumulative Weight in Pounds", y = "Tomato Variety") + 
+  theme_solarized_2()
 
-# babynames %>%
-#   filter(sex == "M") %>% 
-#   group_by(name) %>% 
-#   summarize(nsum = sum(n)) %>% 
-#   arrange(desc(nsum))
-  
   
 ```
 
@@ -145,11 +147,25 @@ garden_harvest %>%
   
 ```{r}
 
+garden_harvest %>% 
+  mutate(lowercase = str_to_lower(variety)) %>% 
+  mutate(length = str_length(variety)) %>% 
+  distinct(variety, .keep_all = TRUE) %>% 
+  arrange(vegetable, length)
+  
+
+#how to arrange for both veggie and length simultaneously? 
+  
+
 ```
 
   6. In the `garden_harvest` data, find all distinct vegetable varieties that have "er" or "ar" in their name. HINT: `str_detect()` with an "or" statement (use the | for "or") and `distinct()`.
 
 ```{r}
+
+garden_harvest %>% 
+  distinct(variety) %>% 
+  mutate(variety_letters = str_detect(variety, "er|ar"))
 
 ```
 
@@ -191,11 +207,23 @@ It's natural to expect that bikes are rented more at some times of day, some day
   
 ```{r}
 
+Trips %>% 
+  ggplot() +
+  geom_density(aes(x = sdate), color = "dodgerblue4", fill = "powderblue") +
+  labs(x = "Date (Months)", y = " ", title = "Density of Number of Trips over Time (Months)")
+
+
 ```
   
   8. A density plot of the events versus time of day.  You can use `mutate()` with `lubridate`'s  `hour()` and `minute()` functions to extract the hour of the day and minute within the hour from `sdate`. Hint: A minute is 1/60 of an hour, so create a variable where 3:30 is 3.5 and 3:45 is 3.75.
   
 ```{r}
+
+Trips %>% 
+  mutate(sdate_hour = hour(sdate) + minute(sdate)/60) %>% 
+  ggplot() +
+  geom_density(aes(x = sdate_hour), color = "dodgerblue4", fill = "powderblue") +
+  labs(x = "Time in Hours", y = "", title = "Density of Trip Times in Hours")
 
 ```
   
@@ -203,11 +231,26 @@ It's natural to expect that bikes are rented more at some times of day, some day
   
 ```{r}
 
+Trips %>% 
+  mutate(day_of_week = wday(sdate, label = TRUE)) %>%
+  ggplot() +
+  geom_bar(aes(y = day_of_week), fill = "powderblue") +
+  labs(title = "Total Number of Trips per Day of the Week", x = "", y = "")
+
+
 ```
   
   10. Facet your graph from exercise 8. by day of the week. Is there a pattern?
   
 ```{r}
+
+Trips %>% 
+  mutate(sdate_hour = hour(sdate) + minute(sdate)/60) %>% 
+  mutate(day_of_week = wday(sdate, label = TRUE)) %>% 
+  ggplot() +
+  geom_density(aes(x = sdate_hour), color = "dodgerblue4", fill = "powderblue") +
+  labs(x = "Time in Hours", y = "Day of the Week", title = "Density of Trip Times in Hours by Day of the Week") +
+  facet_wrap("day_of_week")
 
 ```
   
@@ -217,11 +260,29 @@ The variable `client` describes whether the renter is a regular user (level `Reg
   
 ```{r}
 
+Trips %>%
+  mutate(sdate_hour = hour(sdate) + minute(sdate)/60,
+         day_of_week = wday(sdate, label = TRUE)) %>%
+  ggplot(aes(y = day_of_week, 
+             fill = client)) +
+  geom_density(alpha = .5, color = NA) +
+  labs(x = "Time in Hours", y = "Day of the Week", title = "Density of Trip Times in Hours by Client") +
+  facet_wrap("day_of_week")
+
 ```
 
   12. Change the previous graph by adding the argument `position = position_stack()` to `geom_density()`. In your opinion, is this better or worse in terms of telling a story? What are the advantages/disadvantages of each?
   
 ```{r}
+
+Trips %>%
+  mutate(sdate_hour = hour(sdate) + minute(sdate)/60,
+         day_of_week = wday(sdate, label = TRUE)) %>%
+  ggplot(aes(y = day_of_week, 
+             fill = client)) +
+  geom_density(alpha = .5, color = NA, position = position_stack()) +
+  labs(x = "Time in Hours", y = "Day of the Week", title = "Density of Trip Times in Hours by Client") +
+  facet_wrap("day_of_week")
 
 ```
   
@@ -229,11 +290,31 @@ The variable `client` describes whether the renter is a regular user (level `Reg
   
 ```{r}
 
+Trips %>%
+  mutate(sdate_hour = hour(sdate) + minute(sdate)/60,
+         day_of_week = wday(sdate, label = TRUE), 
+         weekend = ifelse(wday(sdate)%in% c(1,7), "weekend", "weekday")) %>%
+  ggplot(aes(y = day_of_week, 
+             fill = client)) +
+  geom_density(alpha = .5, color = NA) +
+  labs(x = "Time in Hours", y = "Day of the Week", title = "Density of Trip Times in Hours by Client") +
+  facet_wrap("weekend")
+
 ```
   
   14. Change the graph from the previous problem to facet on `client` and fill with `weekday`. What information does this graph tell you that the previous didn't? Is one graph better than the other?
   
 ```{r}
+
+Trips %>%
+  mutate(sdate_hour = hour(sdate) + minute(sdate)/60,
+         day_of_week = wday(sdate, label = TRUE), 
+         weekend = ifelse(wday(sdate)%in% c(1,7), "weekend", "weekday")) %>%
+  ggplot(aes(y = day_of_week, 
+            fill = day_of_week)) +
+  geom_density(alpha = .5, color = NA) +
+  labs(x = "Time in Hours", y = "Day of the Week", title = "Density of Trip Durations in Hours by Client Type") +
+  facet_wrap("client")
 
 ```
   
@@ -242,6 +323,8 @@ The variable `client` describes whether the renter is a regular user (level `Reg
   15. Use the latitude and longitude variables in `Stations` to make a visualization of the total number of departures from each station in the `Trips` data. Use either color or size to show the variation in number of departures. We will improve this plot next week when we learn about maps!
   
 ```{r}
+
+
 
 ```
   
