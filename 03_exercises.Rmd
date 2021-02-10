@@ -13,7 +13,7 @@ output:
 
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
+knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
 ```
 
 ```{r libraries}
@@ -84,7 +84,8 @@ garden_harvest %>%
   summarize(pounds = sum((weight * 0.00220462))) %>% 
   arrange(day_of_week) %>% 
   arrange(vegetable) %>% 
-  pivot_wider(names_from = day_of_week, values_from = pounds)
+  pivot_wider(names_from = day_of_week, 
+              values_from = pounds)
 
 # couldn't figure out how to get the days of the week to be in order. 
 
@@ -99,31 +100,17 @@ garden_harvest %>%
   summarize(pounds = sum(weight * 0.00220462)) %>% 
   inner_join(garden_planting) 
 
-#some of the variety ones are repeated because there wasn't a distinction made between the variety in the first plot (garden_harvest) and the second table that it was joined with. 
-  
-  # I had initially used the "left_join" instead of "semi-join." I like the latter better because it allows the two categories that the two tables have in common to be collapsed into one. However, some of the other variables-- such as plot, number of seeds planted, and number of seeds (exact)-- do not appear in this table as a result.  --> switch to inner join?
+#Problems: some of the variety ones are repeated (i.e Amish Paste is listed twice with the same values for pounds and vegetable) because there wasn't a distinction made between the variety in the first plot (garden_harvest) and the second table that it was joined with; I would use the distinct function to fix this in the future. Differences in plot aren't able to be accounted for with the joined tables (i.e Amish Paste being plot J and N). 
 # not all of the variables for either plot line up/match ; some are multiple (i.e variety and vegetable have two sections for each separate original table)
-
-# not sure how to get rid of the other variables?
-
-
-  # group_by(variety, vegetable) %>% 
-  # summarize(pounds = sum((weight * 0.00220462)))
-
-# garden_harvest %>% 
-#   mutate(day_of_week = wday(date, label = TRUE)) %>% 
-#   group_by(vegetable, day_of_week) %>% 
-#   summarize(pounds = sum((weight * 0.00220462))) %>% 
-#   arrange(day_of_week) %>% 
-#   arrange(vegetable) %>% 
-#   pivot_wider(names_from = day_of_week, values_from = pounds)
+  
+  # I had initially used the "left_join" instead of "semi-join." I like the latter better because it allows the two categories that the two tables have in common to be collapsed into one. However, some of the other variables-- such as plot, number of seeds planted, and number of seeds (exact)-- do not appear in this table as a result. As a result, I switched to inner join finally. 
 
 
 ```
 
   3. I would like to understand how much money I "saved" by gardening, for each vegetable type. Describe how I could use the `garden_harvest` and `garden_spending` datasets, along with data from somewhere like [this](https://products.wholefoodsmarket.com/search?sort=relevance&store=10542) to answer this question. You can answer this in words, referencing various join functions. You don't need R code but could provide some if it's helpful.
 
-*For this, *
+*First, you want to create a new variable in garden_spending that adds together the price of the seeds and their tax rates by using the mutate function. From there, you can summarize the total price for each variety of vegetable seed that was planted and calculate the total amount of money spent for each vegetable. From there, you could use the data from your new variable "pounds" in garden_harvest which calculates how many pounds of each variety you harvested. After calculating this, you can go to a website-- like the Wholefoods website-- and see how much money each variety of vegetable is per pound. Using that information, you can multiply the number of pounds by the price per pound per each variety and that number will be the amount of money saved*
 
   4. Subset the data to tomatoes. Reorder the tomato varieties from smallest to largest first harvest date. Create a barplot of total harvest in pounds for each variety, in the new order.
 
@@ -134,10 +121,13 @@ garden_harvest %>%
   group_by(variety) %>% 
   summarize(pounds = sum(weight * 0.00220462), 
             harvest1 = min(date)) %>%
-  ggplot(aes(x = pounds, y = fct_reorder(variety, pounds))) +
-  geom_bar(stat = "identity", fill = "brown4") +
+  ggplot(aes(x = pounds, 
+             y = fct_reorder(variety, pounds))) +
+  geom_bar(stat = "identity", 
+           fill = "brown4") +
   labs(title = "Total Weight in Pounds of Tomatoes by Variety", 
-       x = "Cumulative Weight in Pounds", y = "Tomato Variety") + 
+       x = "Cumulative Weight in Pounds", 
+       y = "Tomato Variety") + 
   theme_solarized_2()
 
   
@@ -154,7 +144,7 @@ garden_harvest %>%
   arrange(vegetable, length)
   
 
-#how to arrange for both veggie and length simultaneously? 
+#not sure how to arrange for both veggie and length simultaneously? 
   
 
 ```
@@ -252,6 +242,8 @@ Trips %>%
   labs(x = "Time in Hours", y = "Day of the Week", title = "Density of Trip Times in Hours by Day of the Week") +
   facet_wrap("day_of_week")
 
+#There is a pattern. It seems as though the weekend days (Sat/Sun) have a longer time overall with a single peak around the 15 hour mark for both. However, the weekdays are all bimodal, with one peak around 5 hours and the other around 16. 
+
 ```
   
 The variable `client` describes whether the renter is a regular user (level `Registered`) or has not joined the bike-rental organization (`Causal`). The next set of exercises investigate whether these two different categories of users show different rental behavior and how `client` interacts with the patterns you found in the previous exercises. 
@@ -284,7 +276,14 @@ Trips %>%
   labs(x = "Time in Hours", y = "Day of the Week", title = "Density of Trip Times in Hours by Client") +
   facet_wrap("day_of_week")
 
+
+
 ```
+
+
+*I think that this graph is harder to read and thus a bit misleading and worse than the first one. In this graph, it appears that casual riders are spending more time on the bikes than the regular riders, but this is not the case if you look at the initial graph. Because the data are stacked on top of each other, it seems this way and the data appear misrepresented *  
+  
+  
   
   13. In this graph, go back to using the regular density plot (without `position = position_stack()`). Add a new variable to the dataset called `weekend` which will be "weekend" if the day is Saturday or Sunday and  "weekday" otherwise (HINT: use the `ifelse()` function and the `wday()` function from `lubridate`). Then, update the graph from the previous problem by faceting on the new `weekend` variable. 
   
@@ -313,10 +312,14 @@ Trips %>%
   ggplot(aes(y = day_of_week, 
             fill = day_of_week)) +
   geom_density(alpha = .5, color = NA) +
-  labs(x = "Time in Hours", y = "Day of the Week", title = "Density of Trip Durations in Hours by Client Type") +
+  labs(x = "Time in Hours", y = "Day of the Week", title = "Density of Trip Durations in Hours by Day of the Week") +
   facet_wrap("client")
 
 ```
+
+*This graph tells me what day of the week each of the duration peaks belongs to in a more explicit way than the first. Additionally, it's a bit easier to read as casual and regular riders are split into two separate graphs rather than lying on top of each other. The other showed differences in week day and weekend rides (rides decreased as the week went on with highest durations on Sundays) and differences between casual and regular riders. I prefer this graph to the other due to readability and ease of comparison.*
+  
+  
   
 ### Spatial patterns
 
@@ -324,7 +327,13 @@ Trips %>%
   
 ```{r}
 
-
+Stations %>% 
+  rename(sstation = name) %>% 
+  left_join(Trips, by = "sstation") %>% 
+  ggplot(aes(x = lat, y = long, color = sstation, size = sstation)) +
+  geom_jitter(alpha = .25) +
+  labs(title = "Visualization of Total Station Departures", x = "latitude", y = "longitude") +
+  theme(legend.position = "none")
 
 ```
   
@@ -332,7 +341,21 @@ Trips %>%
   
 ```{r}
 
+Stations %>% 
+  rename(sstation = name) %>% 
+  left_join(Trips, by = "sstation") %>% 
+  group_by(sstation) %>% 
+  mutate(ncasual = "Casual", nregular = "Regular" , morecasual = ncasual > nregular) %>% 
+  ggplot(aes(x = lat, y = long, color = sstation, size = client)) +
+  geom_jitter(alpha = .25) +
+  labs(title = "Visualization of Total Station Departures", x = "latitude", y = "longitude") +
+  theme(legend.position = "none") 
+
 ```
+ 
+ *I noticed that there's a lot of casual riders that start out toward the top left of the plot and fewer that start out on the outskirts-- perhaps due to lack of comfort or accessibility.* 
+ 
+ 
   
 ### Spatiotemporal patterns
 
@@ -340,15 +363,37 @@ Trips %>%
   
 ```{r}
 
+Trips %>% 
+  mutate(sday = as_date(sdate)) %>% 
+  group_by(sstation) %>% 
+  #arrange()
+
+#didn't have time to finish
+
+
 ```
   
   18. Use a join operation to make a table with only those trips whose departures match those top ten station-date combinations from the previous part.
   
 ```{r}
 
+#didn't have time to finish
+
 ```
   
   19. Build on the code from the previous problem (ie. copy that code below and then %>% into the next step.) and group the trips by client type and day of the week (use the name, not the number). Find the proportion of trips by day within each client type (ie. the proportions for all 7 days within each client type add up to 1). Display your results so day of week is a column and there is a column for each client type. Interpret your results.
+
+
+```{r}
+
+Trips %>% 
+  mutate(sday = as_date(sdate)) 
+  
+#didn't have time to finish
+
+```
+
+
 
 **DID YOU REMEMBER TO GO BACK AND CHANGE THIS SET OF EXERCISES TO THE LARGER DATASET? IF NOT, DO THAT NOW.**
 
