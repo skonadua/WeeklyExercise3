@@ -8,7 +8,6 @@ output:
     toc_float: TRUE
     df_print: paged
     code_download: true
-    cold_folding: true
     theme: cosmo
 ---
 
@@ -98,7 +97,7 @@ garden_harvest %>%
 garden_harvest %>% 
   group_by(vegetable, variety) %>%
   summarize(pounds = sum(weight * 0.00220462)) %>% 
-  inner_join(garden_planting) #include by = 
+  inner_join(garden_planting) 
 
 ```
 
@@ -167,7 +166,7 @@ In this activity, you'll examine some factors that may influence the use of bicy
 
 <center>
 
-```{r cache=TRUE}
+```{r}
 
 #![A typical Capital Bikeshare station. This one is at Florida and California, next to Pleasant Pops.](https://www.macalester.edu/~dshuman1/data/112/bike_station.jpg){300px}
 
@@ -185,7 +184,7 @@ Two data tables are available:
 
 Here is the code to read in the data. We do this a little differently than usualy, which is why it is included here rather than at the top of this file. To avoid repeatedly re-reading the files, start the data import chunk with `{r cache = TRUE}` rather than the usual `{r}`.
 
-```{r cache=TRUE}
+```{r}
 data_site <- 
   "https://www.macalester.edu/~dshuman1/data/112/2014-Q4-Trips-History-Data-Small.rds" 
 Trips <- readRDS(gzcon(url(data_site)))
