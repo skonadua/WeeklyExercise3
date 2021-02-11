@@ -8,6 +8,7 @@ output:
     toc_float: TRUE
     df_print: paged
     code_download: true
+    cold_folding: true
     theme: cosmo
 ---
 
@@ -115,6 +116,8 @@ garden_harvest %>%
 </div>
 
 ```r
+#join
+
 #Problems: some of the variety ones are repeated (i.e Amish Paste is listed twice with the same values for pounds and vegetable) because there wasn't a distinction made between the variety in the first plot (garden_harvest) and the second table that it was joined with; I would use the distinct function to fix this in the future. Differences in plot aren't able to be accounted for with the joined tables (i.e Amish Paste being plot J and N). 
 # not all of the variables for either plot line up/match ; some are multiple (i.e variety and vegetable have two sections for each separate original table)
   
@@ -135,12 +138,12 @@ garden_harvest %>%
   summarize(pounds = sum(weight * 0.00220462), 
             harvest1 = min(date)) %>%
   ggplot(aes(x = pounds, 
-             y = fct_reorder(variety, pounds))) +
+             y = fct_reorder(variety, harvest1))) +
   geom_bar(stat = "identity", 
            fill = "brown4") +
-  labs(title = "Total Weight in Pounds of Tomatoes by Variety", 
-       x = "Cumulative Weight in Pounds", 
-       y = "Tomato Variety") + 
+  labs(title = "Cumulative Weight (Pounds) of Tomatoes by Date of First Harvest", 
+       x = "", 
+       y = "Variety by First Harvest Date") + 
   theme_solarized_2()
 ```
 
@@ -326,13 +329,16 @@ Trips %>%
   ggplot(aes(y = day_of_week, 
              fill = client)) +
   geom_density(alpha = .5, color = NA, position = position_stack()) +
-  labs(x = "Time in Hours", y = "Day of the Week", title = "Density of Trip Times in Hours by Client") +
+  labs(x = "Time in Hours", y = "Day of the Week", title = "Density of Trip Times in Hours by Client Type") +
   facet_wrap("day_of_week")
 ```
 
 ```
 ## Error in mutate(., sdate_hour = hour(sdate) + minute(sdate)/60, day_of_week = wday(sdate, : object 'Trips' not found
 ```
+
+
+
 
 
 *I think that this graph is harder to read and thus a bit misleading and worse than the first one. In this graph, it appears that casual riders are spending more time on the bikes than the regular riders, but this is not the case if you look at the initial graph. Because the data are stacked on top of each other, it seems this way and the data appear misrepresented *  
@@ -357,6 +363,7 @@ Trips %>%
 ```
 ## Error in mutate(., sdate_hour = hour(sdate) + minute(sdate)/60, day_of_week = wday(sdate, : object 'Trips' not found
 ```
+
   
   14. Change the graph from the previous problem to facet on `client` and fill with `weekday`. What information does this graph tell you that the previous didn't? Is one graph better than the other?
   
@@ -377,6 +384,7 @@ Trips %>%
 ## Error in mutate(., sdate_hour = hour(sdate) + minute(sdate)/60, day_of_week = wday(sdate, : object 'Trips' not found
 ```
 
+
 *This graph tells me what day of the week each of the duration peaks belongs to in a more explicit way than the first. Additionally, it's a bit easier to read as casual and regular riders are split into two separate graphs rather than lying on top of each other. The other showed differences in week day and weekend rides (rides decreased as the week went on with highest durations on Sundays) and differences between casual and regular riders. I prefer this graph to the other due to readability and ease of comparison.*
   
   
@@ -386,40 +394,63 @@ Trips %>%
   15. Use the latitude and longitude variables in `Stations` to make a visualization of the total number of departures from each station in the `Trips` data. Use either color or size to show the variation in number of departures. We will improve this plot next week when we learn about maps!
   
 
+
 ```r
-Stations %>% 
-  rename(sstation = name) %>% 
-  left_join(Trips, by = "sstation") %>% 
-  ggplot(aes(x = lat, y = long, color = sstation, size = sstation)) +
-  geom_jitter(alpha = .25) +
-  labs(title = "Visualization of Total Station Departures", x = "latitude", y = "longitude") +
-  theme(legend.position = "none")
+#join smaller to bigger data sets (start w/ larger first)
+Trips %>% 
+  #initial code 
+  #rename(sstation = name) %>% 
+  #left_join(Trips, by = "sstation") 
+  #to avoid renaming, do below
+  left_join(Stations, by = c("sstation" = "name")) %>% 
+  group_by(lat, long, sstation) %>% 
+  summarize(departures = n()) %>% #n doesn't take arguments - don't put anything in parentheses
+  ggplot(aes(y = lat, x = long, color = departures)) +
+  geom_point() +
+  labs(title = "Visualization of Total Station Departures", x = "Longitude", y = "Latitude") 
 ```
 
 ```
-## Error in rename(., sstation = name): object 'Stations' not found
+## Error in left_join(., Stations, by = c(sstation = "name")): object 'Trips' not found
 ```
+
+```r
+# Stations %>% 
+#   rename(sstation = name) %>% 
+#   left_join(Trips, by = "sstation") %>% 
+#   #left_join(Trips, by = c("name" = "sstation")) ~alternative to avoid rename
+#   ggplot(aes(y = lat, x = long, color = sstation, size = sstation)) +
+#   geom_jitter(alpha = .25 ~ delete) +
+#   labs(title = "Visualization of Total Station Departures", x = "longitude", y = "latitude") +
+#   theme(legend.position = "none") ~ delete
+```
+
+
   
   16. Only 14.4% of the trips in our data are carried out by casual users. Create a plot that shows which area(s) have stations with a much higher percentage of departures by casual users. What patterns do you notice? (Again, we'll improve this next week when we learn about maps).
   
 
 ```r
-Stations %>% 
-  rename(sstation = name) %>% 
-  left_join(Trips, by = "sstation") %>% 
-  group_by(sstation) %>% 
-  mutate(ncasual = "Casual", nregular = "Regular" , morecasual = ncasual > nregular) %>% 
-  ggplot(aes(x = lat, y = long, color = sstation, size = client)) +
-  geom_jitter(alpha = .25) +
-  labs(title = "Visualization of Total Station Departures", x = "latitude", y = "longitude") +
-  theme(legend.position = "none") 
+Trips %>% 
+  left_join(Stations, by = c("sstation" = "name")) %>% 
+  mutate(casual = client == "Casual") %>% 
+  group_by(lat, long, sstation) %>% 
+  summarize(departures = n(), totalcasual = sum(casual)) %>% 
+  mutate(proportion = totalcasual / departures) %>% 
+  ggplot(aes(y = lat, x = long, color = proportion)) +
+  geom_jitter() +
+  labs(title = "Visualization of Proportion of Station Departures by Casual Riders", x = "Longitude", y = "Latitude")
 ```
 
 ```
-## Error in rename(., sstation = name): object 'Stations' not found
+## Error in left_join(., Stations, by = c(sstation = "name")): object 'Trips' not found
+```
+
+```r
+#stations with a much higher percentage of departures by casual users.
 ```
  
- *I noticed that there's a lot of casual riders that start out toward the top left of the plot and fewer that start out on the outskirts-- perhaps due to lack of comfort or accessibility.* 
+ *There's not all that much of a pattern it seems; but most casual riders seem to conglomerate toward the mid to bottom right corner of the plot around (-77.25, 38.925) ish.* 
  
  
   
@@ -429,37 +460,15 @@ Stations %>%
   
 
 ```r
-
-Trips %>% 
+Top10 <- Trips %>% 
   mutate(sday = as_date(sdate)) %>% 
-  group_by(sstation) %>% 
-  #arrange()
-
-#didn't have time to finish
-
-```
-
-```
-## Error: <text>:10:0: unexpected end of input
-## 8: 
-## 9: 
-##   ^
-```
-  
-  18. Use a join operation to make a table with only those trips whose departures match those top ten station-date combinations from the previous part.
-  
-
-```r
-#didn't have time to finish
-```
-  
-  19. Build on the code from the previous problem (ie. copy that code below and then %>% into the next step.) and group the trips by client type and day of the week (use the name, not the number). Find the proportion of trips by day within each client type (ie. the proportions for all 7 days within each client type add up to 1). Display your results so day of week is a column and there is a column for each client type. Interpret your results.
-
-
-
-```r
-Trips %>% 
-  mutate(sday = as_date(sdate)) 
+  left_join(Stations, by = c("sstation" = "name")) %>% 
+  mutate(casual = client == "Casual") %>%
+  group_by(lat, long, sstation, sday) %>% 
+  summarize(departures = n()) %>%
+  arrange(desc(departures)) %>% 
+  ungroup() %>% 
+  head(n = 10)
 ```
 
 ```
@@ -467,7 +476,63 @@ Trips %>%
 ```
 
 ```r
-#didn't have time to finish
+print(Top10)
+```
+
+```
+## Error in print(Top10): object 'Top10' not found
+```
+
+```r
+# Trips %>% 
+#   mutate(sday = as_date(sdate)) %>% 
+#   group_by(sstation) %>% 
+#   #arrange()
+
+# Not sure how to get dates to show up
+```
+  
+  18. Use a join operation to make a table with only those trips whose departures match those top ten station-date combinations from the previous part.
+  
+
+```r
+# join w trips; start w/ trips and join data set to it
+
+Trips %>%
+  mutate(sday = as_date(sdate)) %>% 
+  inner_join(Top10, by = c("sstation", "sday"))
+```
+
+```
+## Error in mutate(., sday = as_date(sdate)): object 'Trips' not found
+```
+  
+  19. Build on the code from the previous problem (ie. copy that code below and then %>% into the next step.) and group the trips by client type and day of the week (use the name, not the number). Find the proportion of trips by day within each client type (ie. the proportions for all 7 days within each client type add up to 1). Display your results so day of week is a column and there is a column for each client type. Interpret your results.
+
+
+
+```r
+Trips %>%
+  mutate(sday = as_date(sdate)) %>% 
+  inner_join(Top10, by = c("sstation", "sday")) %>% 
+  mutate(day_of_week = wday(sdate, label = TRUE)) %>% 
+  group_by(client, day_of_week) %>% 
+  count() %>% 
+  group_by(client) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  pivot_wider(id_cols = day_of_week,
+              names_from = client, 
+              values_from = prop)
+```
+
+```
+## Error in mutate(., sday = as_date(sdate)): object 'Trips' not found
+```
+
+```r
+# group_by + mutate --> usually for finding proportions. otherwise group_by + summarize
+
+# id_cols : which unique combination of rows do you want R to create (e.g id_cols = week-day/n -> row for each combination of weekday and n)
 ```
 
 
